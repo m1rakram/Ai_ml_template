@@ -124,7 +124,7 @@ def train(model, train_loader, val_loader, optimizer, loss_fn, n_epochs, device)
 
 
 def main():
-    device = "cuda"
+    device = "cpu"
     tr = transforms.Compose([
         transforms.ToTensor(),
         transforms.Resize([224, 224])
