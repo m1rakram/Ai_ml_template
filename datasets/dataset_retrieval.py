@@ -2,59 +2,51 @@ import torch
 import torch.nn
 from PIL import Image
 from torchvision import transforms
-
+import os
+import numpy as np
 from torch.utils.data import Dataset
 
 
 
-
 class custom_dataset(Dataset):
-
-    # initialize your dataset class
-    def __init__(self, mode ="train", image_path = "relative/path/to/your/images", label_path = "relative/path/to/your/labels"):
-        self.mode = mode    # you have to specify which set do you use, train, val or test
-        self.image_path = image_path #you may need this var in getitem
-        self.label_path = label_path
-
-
-        #create list of paths for the images: (depends on your dataset structure)
-
-        self.total_images = []
-        self.labels = []
-
-        #distribute to val train and test
-
-        val_images = []
-        test_images  = []
-        train_images = []
-
-
-        if(mode == "train"):
-            self.image_list = train_images
-        elif(mode == "val"):
-            self.image_list = val_images
-        else:
-            self.image_list = test_images
-
-
+    def __init__(self, mode = "train", root = "datasets/demo_dataset", transforms = None):
+        super().__init__()
+        self.mode = mode
+        self.root = root
+        self.transforms = transforms
+        
+        #select split
+        self.folder = os.path.join(self.root, self.mode)
+        
+        #initialize lists
+        self.image_list = []
+        self.label_list = []
+        
+        #save class lists
+        self.class_list = os.listdir(self.folder)
+        self.class_list.sort()
+        
+        for class_id in range(len(self.class_list)):
+            for image in os.listdir(os.path.join(self.folder, self.class_list[class_id])):
+                self.image_list.append(os.path.join(self.folder, self.class_list[class_id], image))
+                label = np.zeros(len(self.class_list))
+                label[class_id] = 1.0
+                self.label_list.append(label)
+        
     def __getitem__(self, index):
-        # getitem is required field for pytorch dataloader. Check the documentation
-
-        image  = Image.open(self.image_list[index])
-
-        transform = transforms.Compose([transforms.ToTensor()])
-        image = transform(image)
-
-        label = torch.as_tensor(label)
-
-        # all labels should be converted from any data type to tensor
-        # for parallel processing
-
-
+        image_name = self.image_list[index]
+        label = self.label_list[index]
+        
+        
+        image = Image.open(image_name)
+        if(self.transforms):
+            image = self.transforms(image)
+        
+        label = torch.tensor(label)
+        
         return image, label
-    
-
-
-    
+            
     def __len__(self):
-        return len(self.image_list)
+        return len(self.image_list)        
+
+
